@@ -177,3 +177,6 @@ system_ss.add(when: 'CONFIG_SBSA_REF', if_true: files('sbsa_ec.c'))
 system_ss.add(when: 'CONFIG_LASI', if_true: files('lasi.c'))
 
 system_ss.add(when: 'CONFIG_AXIADO_CLK', if_true: files('axiado_clk.c'))
+system_ss.add(when: 'CONFIG_TMS570_SYSTEM', if_true: files('tms570_system.c', 'tms570_config.c'))
+system_ss.add(when: 'CONFIG_TMS570_ESM', if_true: files('tms570_esm.c'))
+system_ss.add(when: 'CONFIG_TMS570_DCC', if_true: files('tms570_dcc.c'))

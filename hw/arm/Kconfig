@@ -730,3 +730,23 @@ config AXIADO_EVK
     default y
     depends on TCG && ARM
     select AXIADO_SOC
+
+config OBC100
+    bool
+    default y
+    depends on TCG && ARM
+    select TMS570_VIM
+    select TMS570_SYSTEM
+    select TMS570_ESM
+    select TMS570_DCC
+    select TMS570_RTI
+    select TMS570_SCI
+    select TMS570_GIO
+    select TMS570_DMA
+    select TMS570_I2C
+    select OBC_EPS
+    select OBC_RTC
+    select TMS570_SPI
+    select TMS570_ADC
+    select TMS570_DCAN
+    select UNIMP

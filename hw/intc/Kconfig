@@ -120,3 +120,6 @@ config LOONGARCH_EXTIOI
 
 config LOONGARCH_DINTC
     bool
+
+config TMS570_VIM
+    bool

@@ -264,3 +264,12 @@ config K230_DECOMP_GZIP
     bool
 
 source macio/Kconfig
+
+config TMS570_SYSTEM
+    bool
+
+config TMS570_ESM
+    bool
+
+config TMS570_DCC
+    bool

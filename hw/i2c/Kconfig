@@ -1,6 +1,14 @@
 config I2C
     bool
 
+config TMS570_I2C
+    bool
+    select I2C
+
+config OBC_EPS
+    bool
+    select I2C
+
 config I2C_DEVICES
     # Device group for i2c devices which can reasonably be user-plugged
     # to any board's i2c bus

@@ -1,2 +1,5 @@
 config STM32F2XX_ADC
     bool
+
+config TMS570_ADC
+    bool
