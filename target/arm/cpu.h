@@ -2170,6 +2170,13 @@ enum arm_features {
     ARM_FEATURE_M_MAIN, /* M profile Main Extension */
     ARM_FEATURE_V8_1M, /* M profile extras only in v8.1M and later */
     /*
+     * ARMv7-R permits the legacy word-invariant BE-32 endianness model as an
+     * implementation option (ARMv7-A removed it).  Cortex-R4/R5 implement it,
+     * and TI's Hercules parts (e.g. TMS570LC4357) ship configured that way, so
+     * their firmware needs it.  Set this only on CPUs that really have it.
+     */
+    ARM_FEATURE_BE32_V7R, /* ARMv7-R CPU implementing legacy SCTLR.B (BE-32) */
+    /*
      * ARM_FEATURE_BACKCOMPAT_CNTFRQ makes the CPU default cntfrq be 62.5MHz
      * if the board doesn't set a value, instead of 1GHz. It is for backwards
      * compatibility and used only with CPU definitions that were already
@@ -2439,9 +2446,14 @@ static inline bool arm_sctlr_b(const CPUARMState *env)
         /* We need not implement SCTLR.ITD in user-mode emulation, so
          * let linux-user ignore the fact that it conflicts with SCTLR_B.
          * This lets people run BE32 binaries with "-cpu any".
+         *
+         * SCTLR.B is RAZ/WI from ARMv7 on for the A profile, but the R profile
+         * keeps it as an implementation option; CPUs that have it set
+         * ARM_FEATURE_BE32_V7R.
          */
 #ifndef CONFIG_USER_ONLY
-        !arm_feature(env, ARM_FEATURE_V7) &&
+        (!arm_feature(env, ARM_FEATURE_V7) ||
+         arm_feature(env, ARM_FEATURE_BE32_V7R)) &&
 #endif
         (env->cp15.sctlr_el[1] & SCTLR_B) != 0;
 }

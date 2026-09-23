@@ -2170,7 +2170,9 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
     }
 
     if (cpu->cfgend) {
-        if (arm_feature(env, ARM_FEATURE_V7)) {
+        if (arm_feature(env, ARM_FEATURE_BE32_V7R)) {
+            cpu->reset_sctlr |= SCTLR_B | SCTLR_EE;
+        } else if (arm_feature(env, ARM_FEATURE_V7)) {
             cpu->reset_sctlr |= SCTLR_EE;
         } else {
             cpu->reset_sctlr |= SCTLR_B;

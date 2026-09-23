@@ -916,8 +916,16 @@ static TCGv_va gen_aa32_addr(DisasContext *s, TCGv_i32 a32, MemOp op)
     TCGv_va addr = tcgv_va_temp_new();
     tcg_gen_mov_i32(addr, a32);
 
-    /* Not needed for user-mode BE32, where we use MO_BE instead.  */
-    if (!IS_USER_ONLY && s->sctlr_b && (op & MO_SIZE) < MO_32) {
+    /*
+     * Not needed for user-mode BE32, where we use MO_BE instead.
+     *
+     * The XOR compensates for guest memory being held in little-endian word
+     * order: it maps a sub-word address onto the right byte lane.  When the
+     * data accesses are themselves big-endian the image is already stored
+     * big-endian, the lanes line up, and XORing would reverse them.
+     */
+    if (!IS_USER_ONLY && s->sctlr_b && !s->be_data &&
+        (op & MO_SIZE) < MO_32) {
         tcg_gen_xori_i32(addr, addr, 4 - (1 << (op & MO_SIZE)));
     }
     return addr;
@@ -949,7 +957,8 @@ void gen_aa32_ld_internal_i64(DisasContext *s, TCGv_i64 val,
     tcg_gen_qemu_ld_i64(val, addr, index, opc);
 
     /* Not needed for user-mode BE32, where we use MO_BE instead.  */
-    if (!IS_USER_ONLY && s->sctlr_b && (opc & MO_SIZE) == MO_64) {
+    if (!IS_USER_ONLY && s->sctlr_b && !s->be_data &&
+        (opc & MO_SIZE) == MO_64) {
         tcg_gen_rotri_i64(val, val, 32);
     }
 }
@@ -960,7 +969,8 @@ void gen_aa32_st_internal_i64(DisasContext *s, TCGv_i64 val,
     TCGv_va addr = gen_aa32_addr(s, a32, opc);
 
     /* Not needed for user-mode BE32, where we use MO_BE instead.  */
-    if (!IS_USER_ONLY && s->sctlr_b && (opc & MO_SIZE) == MO_64) {
+    if (!IS_USER_ONLY && s->sctlr_b && !s->be_data &&
+        (opc & MO_SIZE) == MO_64) {
         TCGv_i64 tmp = tcg_temp_new_i64();
         tcg_gen_rotri_i64(tmp, val, 32);
         tcg_gen_qemu_st_i64(tmp, addr, index, opc);
@@ -6345,16 +6355,18 @@ static void disas_thumb_insn(DisasContext *s, uint32_t insn)
 }
 
 /* Ditto, for a halfword (Thumb) instruction */
-static uint16_t arm_lduw_code(CPUARMState *env, DisasContextBase* s,
-                              uint32_t addr, bool sctlr_b)
+static uint16_t arm_lduw_code(CPUARMState *env, DisasContext *s,
+                              uint32_t addr)
 {
     MemOp end = MO_LE;
-    if (sctlr_b) {
-        /* In BE32 mode, adjacent Thumb instructions are swapped. */
-        addr ^= 2;
+    if (s->sctlr_b) {
+        /* Swap halfwords only for the legacy LE physical memory layout. */
+        if (!s->be_data) {
+            addr ^= 2;
+        }
         end = MO_BE;
     }
-    return translator_lduw_end(env, s, addr, end);
+    return translator_lduw_end(env, &s->base, addr, end);
 }
 
 static bool insn_crosses_page(CPUARMState *env, DisasContext *s)
@@ -6366,7 +6378,7 @@ static bool insn_crosses_page(CPUARMState *env, DisasContext *s)
      * boundary, so we cross the page if the first 16 bits indicate
      * that this is a 32 bit insn.
      */
-    uint16_t insn = arm_lduw_code(env, &s->base, s->base.pc_next, s->sctlr_b);
+    uint16_t insn = arm_lduw_code(env, s, s->base.pc_next);
 
     return !thumb_insn_is_16bit(s, s->base.pc_next, insn);
 }
@@ -6716,11 +6728,11 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     }
 
     dc->pc_curr = pc;
-    insn = arm_lduw_code(env, &dc->base, pc, dc->sctlr_b);
+    insn = arm_lduw_code(env, dc, pc);
     is_16bit = thumb_insn_is_16bit(dc, dc->base.pc_next, insn);
     pc += 2;
     if (!is_16bit) {
-        uint32_t insn2 = arm_lduw_code(env, &dc->base, pc, dc->sctlr_b);
+        uint32_t insn2 = arm_lduw_code(env, dc, pc);
         insn = insn << 16 | insn2;
         pc += 2;
     }
