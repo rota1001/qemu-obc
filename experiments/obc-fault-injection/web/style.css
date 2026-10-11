@@ -1,0 +1,236 @@
+:root {
+  /* 深色主題變數 */
+  --paper: #1e2329;       /* 區塊/面板背景 */
+  --canvas: #0d1116;      /* 網頁底色 */
+  --ink: #c9d1d9;         /* 主要文字顏色 */
+  --muted: #8b949e;       /* 次要/備註文字顏色 */
+  --line: #30363d;        /* 邊線顏色 */
+  --blue: #58a6ff;        /* 連結/按鈕藍色 (調整為較亮以符合對比度) */
+  --red: #f85149;         /* 錯誤提示紅色 */
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font: 15px/1.5 system-ui, sans-serif;
+}
+
+header {
+  background: var(--paper);
+  padding: 22px 32px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h1 {
+  font-size: 21px;
+  letter-spacing: -.5px;
+  margin: 0;
+  font-weight: 650;
+}
+
+header p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#status { font-size: 13px; }
+#status::before {
+  content: '●';
+  margin-right: 8px;
+  color: var(--blue);
+}
+
+main {
+  max-width: 1540px;
+  margin: auto;
+  padding: 28px 32px;
+  display: grid;
+  grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+  gap: 28px;
+}
+
+section { margin-bottom: 28px; }
+h2 { font-size: 16px; margin: 0 0 4px; font-weight: 650; }
+.hint { font-size: 12px; color: var(--muted); margin: 0 0 14px; }
+
+.controls {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 16px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.row:last-child { border: 0; }
+.row label { font-size: 13px; overflow-wrap: anywhere; }
+
+.value {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.unit {
+  width: 30px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+input, button { font: inherit; }
+
+input[type=number] {
+  width: 88px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink);
+  background: var(--canvas); /* 改為深色底 */
+}
+
+button {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  background: var(--canvas); /* 改為深色底 */
+  color: var(--blue);
+  font-size: 13px;
+}
+
+button:hover {
+  background: rgba(88, 166, 255, 0.1); /* 帶有透明度的藍色作為 hover 背景 */
+  border-color: var(--blue);
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+
+input:focus-visible, button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+input[type=checkbox] {
+  accent-color: var(--blue);
+  width: 17px;
+  height: 17px;
+}
+
+.console {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  min-width: 0;
+}
+
+.console-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.console-head h2 { margin: 0; }
+
+.terminal {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--paper); /* 統一面板底色 */
+}
+
+#output {
+  height: calc(100vh - 290px);
+  min-height: 300px;
+  max-height: 800px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 20px;
+  margin: 0;
+  color: var(--ink); /* 原本寫死 #334252，改套用主題字色 */
+  font: 13px/1.65 ui-monospace, 'DejaVu Sans Mono', monospace;
+  tab-size: 4;
+}
+
+#command-form {
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding: 12px 16px;
+  align-items: center;
+}
+
+#command {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 6px;
+  background: transparent;
+  font: 14px ui-monospace, monospace;
+  color: var(--ink);
+}
+
+#command-form span { color: var(--blue); }
+
+.shortcuts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.shortcuts button { font-size: 12px; }
+
+#message {
+  min-height: 42px;
+  font-size: 13px;
+  padding: 10px 0;
+  color: var(--muted);
+}
+
+#message.error { color: var(--red); }
+
+.footer { font-size: 12px; color: var(--muted); }
+
+.subtle { font-weight: 400; color: var(--muted); }
+.small { font-size: 12px; }
+
+@media (max-width: 850px) {
+  header { padding: 18px; }
+  main {
+    padding: 20px 18px;
+    grid-template-columns: 1fr;
+  }
+  .console {
+    position: static;
+    grid-row: 1;
+  }
+  #output {
+    height: 330px;
+    min-height: 0;
+  }
+  .row label { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto; }
+}
+.measurement{display:block;color:var(--muted);font-size:11px;margin-top:3px}

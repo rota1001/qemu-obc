@@ -26,6 +26,7 @@ struct ObcEpsState {
     uint8_t soh_period, watchdog, mode;
     uint16_t outputs, boots;
     uint32_t battery_mv;
+    uint8_t disconnected, bad_checksum;
     qemu_irq output[16];
     QEMUTimer *timer;
     struct {
@@ -173,6 +174,9 @@ static void eps_response(ObcEpsState *s)
     for (unsigned i = 0; i < length - 1; i++) {
         p[length - 1] ^= p[i];
     }
+    if (s->bad_checksum) {
+        p[length - 1] ^= 1;
+    }
 }
 
 static void eps_command(ObcEpsState *s)
@@ -229,6 +233,10 @@ static void eps_command(ObcEpsState *s)
 static int eps_event(I2CSlave *slave, enum i2c_event event)
 {
     ObcEpsState *s = OBC_EPS(slave);
+    if (s->disconnected &&
+        (event == I2C_START_SEND || event == I2C_START_RECV)) {
+        return -1; /* Address NACK: the external device is absent. */
+    }
     if (event == I2C_START_SEND) {
         s->expect_command = true;
         s->write_count = 0;
@@ -291,6 +299,13 @@ static void eps_init(Object *obj)
     ObcEpsState *s = OBC_EPS(obj);
     s->timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, eps_tick, s);
     qdev_init_gpio_out_named(DEVICE(obj), s->output, "output", 16);
+    /* Runtime external inputs; distinct from startup-only qdev properties. */
+    object_property_add_uint32_ptr(obj, "input-battery-mv", &s->battery_mv,
+                                   OBJ_PROP_FLAG_READWRITE);
+    object_property_add_uint8_ptr(obj, "disconnected", &s->disconnected,
+                                  OBJ_PROP_FLAG_READWRITE);
+    object_property_add_uint8_ptr(obj, "bad-checksum", &s->bad_checksum,
+                                  OBJ_PROP_FLAG_READWRITE);
 }
 
 static void eps_finalize(Object *obj)

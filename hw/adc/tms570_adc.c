@@ -148,12 +148,25 @@ static void adc_reset(DeviceState *dev)
 static void adc_init(Object *obj)
 {
     TMS570AdcState *s = TMS570_ADC(obj);
+    unsigned ch;
+
     memory_region_init_io(&s->iomem, obj, &adc_ops, s, TYPE_TMS570_ADC, 0x200);
     sysbus_init_mmio(SYS_BUS_DEVICE(obj), &s->iomem);
     for (unsigned g = 0; g < 3; g++) {
         sysbus_init_irq(SYS_BUS_DEVICE(obj), &s->irq[g]);
     }
     qdev_init_gpio_in_named(DEVICE(obj), adc_input, "analog", 32);
+
+    /*
+     * Test harness input.  QMP's standard qom-set/qom-get commands can write
+     * these properties while the machine is running.  Values are raw 12-bit
+     * samples; board-level units and sensor transfer functions belong in the
+     * external test API, not in the ADC peripheral.
+     */
+    for (ch = 0; ch < 32; ch++) {
+        object_property_add_uint16_ptr(obj, "sample[*]", &s->sample[ch],
+                                       OBJ_PROP_FLAG_READWRITE);
+    }
 }
 
 static const Property adc_properties[] = {
