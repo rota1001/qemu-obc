@@ -14,6 +14,7 @@ from _obcfi_qmp import Qmp
 from _obcfi_system import System, Result
 from _obcfi_eps import Eps
 from _obcfi_rtc import Rtc
+from _obcfi_adcs import Adcs
 
 __all__ = ['Obc', 'System', 'Result']
 
@@ -39,6 +40,7 @@ class Obc:
         self._dashboard = None
         self.system = System(self._set_adc)
         self.eps = self.rtc = None  # Connected by start().
+        self.adcs = None
         self.console = None
         self._qmp = self._process = self._tmp = None
 
@@ -69,10 +71,13 @@ class Obc:
             raise FileNotFoundError('firmware and qemu paths must exist')
         self._tmp = tempfile.TemporaryDirectory(prefix='obcfi-')
         path = Path(self._tmp.name) / 'qmp.sock'
+        adcs_path = Path(self._tmp.name) / 'adcs.sock'
         args = [str(self.qemu), '-M', 'obc100', '-kernel', str(self.firmware),
                 '-S', '-display', 'none', '-monitor', 'none', '-serial', 'stdio',
                 '-rtc', f'base={self.rtc_base},clock=vm',
-                '-qmp', f'unix:{path},server=on,wait=off']
+                '-qmp', f'unix:{path},server=on,wait=off',
+                '-chardev', f'socket,id=obc-adcs,path={adcs_path},server=on,wait=off',
+                '-serial', 'chardev:obc-adcs']
         if self.sd_image:
             args += ['-drive', f'if=sd,format=raw,file={self.sd_image}']
         try:
@@ -86,6 +91,7 @@ class Obc:
                     raise RuntimeError(f'QMP startup failed:\n{self.output}')
                 time.sleep(0.01)
             self._qmp = Qmp(path)
+            self.adcs = Adcs(adcs_path)
             self.eps, self.rtc = Eps(self._qmp), Rtc(self._qmp)
             self.system.initialize()
             self._qmp.call('cont')
@@ -110,6 +116,8 @@ class Obc:
             self._dashboard.close()
             self._dashboard = None
         self.web_url = None
+        if self.adcs:
+            self.adcs.close()
         if self._process:
             if self.running:
                 self._process.kill()

@@ -76,9 +76,9 @@ class Dashboard:
         app.mount('/assets', StaticFiles(directory=assets / 'assets'), name='assets')
 
         @app.get('/api/state')
-        def state(cursor: int = 0):
+        def state(cursor: int = 0, adcs_cursor: int = 0):
             try:
-                return self.state(cursor)
+                return self.state(cursor, adcs_cursor)
             except (ValueError, RuntimeError, OSError) as exc:
                 return JSONResponse({'error':str(exc)}, status_code=400)
 
@@ -112,7 +112,7 @@ class Dashboard:
             self.socket.close()
             raise
 
-    def state(self, cursor):
+    def state(self, cursor, adcs_cursor=0):
         """Read settings and incremental UART without interfering with Python waits."""
         with self.lock:
             with self.obc.console._condition:
@@ -126,7 +126,8 @@ class Dashboard:
             return dict(running=self.obc.running, inputs=inputs,
                         battery=self.obc.eps.battery_voltage,
                         shift=self.obc.rtc.shift_seconds,
-                        faults=list(self.faults), output=chunk, cursor=end)
+                        faults=list(self.faults), output=chunk, cursor=end,
+                        adcs=self.obc.adcs.snapshot(adcs_cursor))
 
     def control(self, data):
         """Validate a narrow action list; never execute host commands."""
